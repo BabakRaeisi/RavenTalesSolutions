@@ -106,5 +106,57 @@ namespace StoryGenerationMicroservice.API.Controllers
                 return StatusCode(500, new { message = "Failed to delete story" });
             }
         }
+
+        [HttpGet("saved")]
+        public async Task<ActionResult<IEnumerable<StoryResponseDto>>> GetSavedStories()
+        {
+            try
+            {
+                var userId = User.GetUserId();
+                var stories = await _storyService.GetSavedStoriesAsync(userId);
+                return Ok(stories);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get saved stories");
+                return StatusCode(500, new { message = "Failed to retrieve saved stories" });
+            }
+        }
+
+        [HttpGet("seen")]
+        public async Task<ActionResult<IEnumerable<StoryResponseDto>>> GetSeenStories()
+        {
+            try
+            {
+                var userId = User.GetUserId();
+                var stories = await _storyService.GetSeenStoriesAsync(userId);
+                return Ok(stories);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get seen stories");
+                return StatusCode(500, new { message = "Failed to retrieve seen stories" });
+            }
+        }
+
+        [HttpPost("{storyId:guid}/toggle-bookmark")]
+        public async Task<IActionResult> ToggleBookmark(Guid storyId)
+        {
+            try
+            {
+                var userId = User.GetUserId();
+                var success = await _storyService.ToggleBookmarkAsync(userId, storyId);
+                
+                if (success)
+                    return Ok();
+                
+                return BadRequest(new { message = "Failed to toggle bookmark" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to toggle bookmark for story {StoryId}", storyId);
+                return StatusCode(500, new { message = "Failed to toggle bookmark" });
+            }
+        }
     }
 }

@@ -31,7 +31,10 @@ namespace CoreLayer.Entities
 
         public DateTime CreatedAt { get; set; }
 
-        public bool IsBookmarked { get; set; }
+
+
+        public List<Sentence> Sentences { get; set; } = new();
+        public List<Unit> Units { get; set; } = new();
 
         // Navigation property
         [ForeignKey("UserId")]

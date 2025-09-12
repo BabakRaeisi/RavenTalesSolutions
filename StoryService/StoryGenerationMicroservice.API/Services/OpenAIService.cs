@@ -75,35 +75,71 @@ namespace StoryGenerationMicroservice.API.Services
             var levelDescription = OpenAIConstants.LevelDescriptions.GetValueOrDefault(level, level.ToString());
             var topicPart = string.IsNullOrEmpty(topic) ? "" : $" about {topic}";
 
-            return $@"Create a story in {language}{topicPart}.
+            return $@"Create a story in {{language}}{{topicPart}}.
 
-Requirements:
-- Return ONLY a valid JSON object matching the following C# class:
-  public class Story {{
-    public string Title {{ get; set; }};
-    public string Content {{ get; set; }};
-    public string Genre {{ get; set; }};
-    public string LanguageLevel {{ get; set; }};
-    public string TargetLanguage {{ get; set; }};
+Output rules (very important):
+- Return ONLY a single valid JSON object. No prose, no markdown fences.
+- Use standard JSON (double quotes, no trailing commas).
+- The JSON must match exactly this shape (keys and types):
+  {{
+    ""Title"": string,
+    ""Content"": string,
+    ""Genre"": string,
+    ""LanguageLevel"": string,   // one of: A1, A2, B1, B2, C1, C2 (case-sensitive, no extra text)
+    ""TargetLanguage"": string,  // e.g., English, Spanish, French, German, Italian, etc. (case-sensitive, no extra text).
+    ""Sentences"": [
+      {{ ""Id"": string, ""StartChar"": number, ""EndChar"": number, ""Text"": string }}
+    ],
+    ""Units"": [
+      {{
+        ""Id"": string,
+        ""SentenceId"": string,
+        ""IsDiscontinuous"": boolean,
+        ""Segments"": [ {{ ""StartChar"": number, ""EndChar"": number }} ],
+        ""Pieces"": [ string ]
+      }}
+    ]
   }}
-- For 'LanguageLevel', use one of: A1, A2, B1, B2, C1, C2 (case-sensitive, no extra text).
-- For 'TargetLanguage', use one of: English, Spanish, French, German, Italian, etc. (case-sensitive, no extra text).
-- Do not include any explanations or text outside the JSON.
-- The 'Title' should be a short, engaging name for the story.
-- The 'Content' should be the full story text.
-- The 'Genre' should be a single word describing the story type (e.g., Adventure, Mystery).
-- 'LanguageLevel' should be ""{level}"".
-- 'TargetLanguage' should be ""{language}"".
-- The story should be approximately {GetWordCount(level)} words long.
 
-Example format:
-{{
-  ""Title"": ""A Day at the Market"",
-  ""Content"": ""Once upon a time..."",
-  ""Genre"": ""Adventure"",
-  ""LanguageLevel"": ""{level}"",
-  ""TargetLanguage"": ""{language}""
-}}";
+Story requirements:
+- ""LanguageLevel"" must be ""{{level}}"" (case-sensitive).
+- ""TargetLanguage"" must be ""{{language}}"" (case-sensitive).
+- ""Title"" is short and engaging.
+- ""Genre"" is a single word (e.g., Adventure, Mystery).
+- ""Content"" is the full story text (about {GetWordCount(level)} words), with normal spacing and punctuation.
+
+Sentence segmentation:
+- Split ""Content"" into sentences. For each sentence, include one object in ""Sentences"".
+- ""StartChar"" is 0-based, inclusive; ""EndChar"" is 0-based, exclusive; both index into the full ""Content"".
+- ""Text"" must exactly equal Content[StartChar:EndChar].
+
+Units (the clickable “little parts”):
+- Each Unit represents words that function together as one idea; Units may be continuous or discontinuous in the sentence.
+- For every Unit:
+  - ""SentenceId"" points to the sentence it lives in.
+  - ""Segments"" lists 1..N character ranges (0-based inclusive/exclusive) into the full ""Content"".
+  - ""Pieces"" lists the exact substrings for each segment, in order. Each Pieces[k] must equal Content[Segments[k].StartChar : Segments[k].EndChar].
+  - ""IsDiscontinuous"" is true if there are 2+ segments; otherwise false.
+- Do NOT include any extra keys (no ""Type"", no ""Label"", no translations, no tokens, no POS).
+
+Minimality rules (avoid redundancy):
+- Do NOT create standalone verb-only units or loose collocations.
+- Only include the core, meaningful groupings:
+  • French: 
+    1) the negation particle pair (e.g., ""ne … pas/plus/jamais/rien/personne/que"") as one Unit; and 
+    2) the combined subject + negation + finite verb + negative particle as one Unit (e.g., ""Je … ne … VERB … pas""), when present.
+  • Spanish:
+    1) the negated finite verb as one Unit combining ""No"" + the finite verb even if words appear between them (e.g., ""No … puedo""); and 
+    2) any object clitic + infinitive pairing as one Unit (e.g., ""lo … explicar""). 
+- Do NOT reorder or alter words. ""Pieces"" must be exact surface text as it appears in ""Content"".
+- Do NOT emit extra units that are subsets of other units (e.g., the finite verb alone if a negated unit already covers it).
+
+Validation checks before you output:
+- Every ""Text"" equals the ""Content"" slice defined by its StartChar/EndChar.
+- Every ""Pieces"" item equals its corresponding ""Content"" slice.
+- All indices are within bounds of ""Content"".
+
+Return only the final JSON object that follows these rules.";
         }
 
         private int GetWordCount(LanguageLevel level) => level switch

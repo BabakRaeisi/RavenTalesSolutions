@@ -3,12 +3,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CoreLayer.DTOs
 {
-    public class UserPreferencesResponseDto
+    public record UserPreferencesResponseDto(Guid userId,LanguageLevel LanguageLevel , TargetLanguage TargetLanguage,DateTime createdAt, DateTime updatedAt)
     {
-        public Guid UserId { get; set; }
-        public LanguageLevel LastUsedLanguageLevel { get; set; }
-        public TargetLanguage LastUsedTargetLanguage { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+     public UserPreferencesResponseDto() : this(default, default, default, default, default)
+        {
+            // Default constructor initializes with default values
+        }
     }
 }

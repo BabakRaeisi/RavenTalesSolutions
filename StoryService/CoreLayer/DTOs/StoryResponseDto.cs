@@ -3,15 +3,11 @@ using System;
 
 namespace CoreLayer.DTOs
 {
-    public class StoryResponseDto
+    public record StoryResponseDto(Guid Id,Guid userID, string Title ,string Content , LanguageLevel LanguageLevel, TargetLanguage TargetLanguage,string Genre,DateTime CreatedAt)
     {
-        public Guid Id { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-        public LanguageLevel LanguageLevel { get; set; }
-        public TargetLanguage TargetLanguage { get; set; }
-        public string Genre { get; set; } = string.Empty; // Added
-        public DateTime CreatedAt { get; set; }
-        public bool IsBookmarked { get; set; }
+        public StoryResponseDto() : this(default, default, default, default, default,default,default, default)
+        {
+            // Default constructor initializes with default values
+        }
     }
 }
