@@ -1,6 +1,8 @@
+using AutoMapper;
 using CoreLayer.DTOs;
 using CoreLayer.Entities;
 using CoreLayer.Enums;
+using CoreLayer.Exceptions;
 using CoreLayer.RepositoryContracts;
 using CoreLayer.ServiceContracts;
 using System;
@@ -12,143 +14,108 @@ namespace CoreLayer.Services
     public class UserPreferencesService : IUserPreferencesService
     {
         private readonly IUserPreferencesRepository _userPreferencesRepository;
+        private readonly IStoryRepository _storyRepository;
+        private readonly  IMapper _mapper ;
 
-        public UserPreferencesService(IUserPreferencesRepository userPreferencesRepository)
+        public UserPreferencesService(IUserPreferencesRepository userPreferencesRepository, IStoryRepository storyRepository,IMapper mapper)
         {
             _userPreferencesRepository = userPreferencesRepository;
+            _storyRepository = storyRepository;
+            _mapper = mapper;
         }
 
-        public async Task<UserPreferencesResponseDto?> GetUserPreferencesAsync(Guid userId)
+        public async Task<UserPreferencesResponseDto?> GetUserByIdAsync(Guid userId)
         {
-            var preferences = await _userPreferencesRepository.GetByUserIdAsync(userId);
-            if (preferences == null)
-                return null;
-
-            return new UserPreferencesResponseDto(
-                preferences.UserId,
-                preferences.LastUsedLanguageLevel,
-                preferences.LastUsedTargetLanguage,
-                preferences.CreatedAt,
-                preferences.UpdatedAt
-            );
+            var prefs = await _userPreferencesRepository.GetUserByIdAsync(userId);
+            return prefs is null ? null : _mapper.Map<UserPreferencesResponseDto>(prefs);
         }
 
-        public async Task<UserPreferencesResponseDto> UpdateUserPreferencesAsync(Guid userId, UserPreferencesUpdateRequestDto request)
+
+        public async Task<UserPreferencesResponseDto> UpdateUserPreferencesAsync(Guid userId, UserPreferencesUpdateRequestDto req)
         {
-            var existingPreferences = await _userPreferencesRepository.GetByUserIdAsync(userId);
-            
-            if (existingPreferences == null)
-                return await CreateUserPreferencesAsync(userId, request);
+            var prefs = await _userPreferencesRepository.GetUserByIdAsync(userId)
+                       ?? throw new PreferencesMissingException(userId); // or create here if you want
 
-            existingPreferences.LastUsedLanguageLevel = request.LanguageLevel;
-            existingPreferences.LastUsedTargetLanguage = request.TargetLanguage;
-            existingPreferences.PreferredTranslationLanguage = request.PreferredTranslationLanguage;
-            existingPreferences.UpdatedAt = DateTime.UtcNow;
+            prefs.LastUsedLanguageLevel = req.LanguageLevel;
+            prefs.LastUsedTargetLanguage = req.TargetLanguage;
+            prefs.PreferredTranslationLanguage = req.PreferredTranslationLanguage;
+            prefs.UpdatedAt = DateTime.UtcNow;
 
-            var updatedPreferences = await _userPreferencesRepository.UpsertAsync(existingPreferences);
-
-            return new UserPreferencesResponseDto(
-                updatedPreferences.UserId,
-                updatedPreferences.LastUsedLanguageLevel,
-                updatedPreferences.LastUsedTargetLanguage,
-                updatedPreferences.CreatedAt,
-                updatedPreferences.UpdatedAt
-            );
+            var updated = await _userPreferencesRepository.UpsertUserAsync(prefs);
+            return _mapper.Map<UserPreferencesResponseDto>(updated);
         }
 
-        public async Task<UserPreferencesResponseDto> CreateUserPreferencesAsync(Guid userId, UserPreferencesUpdateRequestDto request)
+        public async Task<UserPreferencesResponseDto> CreateUserPreferencesAsync(Guid userId, UserPreferencesUpdateRequestDto req)
         {
-            var newPreferences = new UserPreferences
+            var prefs = new UserPreferences
             {
                 UserId = userId,
-                LastUsedLanguageLevel = request.LanguageLevel,
-                LastUsedTargetLanguage = request.TargetLanguage,
-                PreferredTranslationLanguage = request.PreferredTranslationLanguage,
+                LastUsedLanguageLevel = req.LanguageLevel,
+                LastUsedTargetLanguage = req.TargetLanguage,
+                PreferredTranslationLanguage = req.PreferredTranslationLanguage,
                 SeenStoryIds = new List<Guid>(),
                 SavedStoryIds = new List<Guid>(),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-
-            var createdPreferences = await _userPreferencesRepository.UpsertAsync(newPreferences);
-
-            return new UserPreferencesResponseDto(
-                createdPreferences.UserId,
-                createdPreferences.LastUsedLanguageLevel,
-                createdPreferences.LastUsedTargetLanguage,
-                createdPreferences.CreatedAt,
-                createdPreferences.UpdatedAt
-            );
+            var created = await _userPreferencesRepository.UpsertUserAsync(prefs);
+            return _mapper.Map<UserPreferencesResponseDto>(created);
         }
 
-        public async Task AddToSeenStoriesAsync(Guid userId, Guid storyId)
+        // Get all stories saved/bookmarked by user
+        public async Task<IEnumerable<StoryResponseDto>> GetUserSavedStoriesAsync(Guid userId)
         {
-            var preferences = await _userPreferencesRepository.GetByUserIdAsync(userId);
+            var prefs = await _userPreferencesRepository.GetUserByIdAsync(userId);
+            if (prefs?.SavedStoryIds is null || !prefs.SavedStoryIds.Any()) return Enumerable.Empty<StoryResponseDto>();
 
-            if (preferences == null)
-            {
-                // Create new preferences if none exist
-                preferences = new UserPreferences
-                {
-                    UserId = userId,
-                    LastUsedLanguageLevel = LanguageLevel.B1, // Default
-                    LastUsedTargetLanguage = TargetLanguage.English, // Default
-                    PreferredTranslationLanguage = TargetLanguage.English, // Default
-                    SeenStoryIds = new List<Guid> { storyId },
-                    SavedStoryIds = new List<Guid>(),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-            }
-            else
-            {
-                // Initialize if null
-                preferences.SeenStoryIds ??= new List<Guid>();
-
-                // Add if not already in list
-                if (!preferences.SeenStoryIds.Contains(storyId))
-                {
-                    preferences.SeenStoryIds.Add(storyId);
-                    preferences.UpdatedAt = DateTime.UtcNow;
-                }
-            }
-
-            await _userPreferencesRepository.UpsertAsync(preferences);
+            var stories = await _userPreferencesRepository.GetUserSavedStories(userId);
+            return _mapper.Map<IEnumerable<StoryResponseDto>>(stories);
         }
 
-        public async Task AddToSavedStoriesAsync(Guid userId, Guid storyId)
+        public async Task<IEnumerable<StoryResponseDto>> GetUserStoryHistoryAsync(Guid userId)
         {
-            var preferences = await _userPreferencesRepository.GetByUserIdAsync(userId);
+            var prefs = await _userPreferencesRepository.GetUserByIdAsync(userId);
+            if (prefs?.SeenStoryIds is null || !prefs.SeenStoryIds.Any()) return Enumerable.Empty<StoryResponseDto>();
 
-            if (preferences == null)
+            var stories = await _userPreferencesRepository.GetUserStoryHistoryAsync(userId);
+            return _mapper.Map<IEnumerable<StoryResponseDto>>(stories);
+        }
+
+        // Toggle bookmark status of a story
+
+        public async Task AddStoryToUserHistoryAsync(Guid userId, Guid storyId)
+        {
+            var prefs = await _userPreferencesRepository.GetUserByIdAsync(userId);
+            if (prefs is null) throw new PreferencesMissingException(userId);
+
+            prefs.SeenStoryIds ??= new List<Guid>();
+            if (!prefs.SeenStoryIds.Contains(storyId))
             {
-                // Create new preferences if none exist
-                preferences = new UserPreferences
-                {
-                    UserId = userId,
-                    LastUsedLanguageLevel = LanguageLevel.B1, // Default
-                    LastUsedTargetLanguage = TargetLanguage.English, // Default
-                    PreferredTranslationLanguage = TargetLanguage.English, // Default
-                    SeenStoryIds = new List<Guid>(),
-                    SavedStoryIds = new List<Guid> { storyId },
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
+                prefs.SeenStoryIds.Add(storyId);
+                prefs.UpdatedAt = DateTime.UtcNow;
+                await _userPreferencesRepository.UpsertUserAsync(prefs);
             }
+        }
+
+        public async Task AddToUserSavedStoriesAsync(Guid userId, Guid storyId)
+        {
+            var prefs = await _userPreferencesRepository.GetUserByIdAsync(userId)
+               ?? throw new PreferencesMissingException(userId);
+
+            prefs.SavedStoryIds ??= new List<Guid>();
+            if (prefs.SavedStoryIds.Contains(storyId))
+                prefs.SavedStoryIds.Remove(storyId);
             else
-            {
-                // Initialize if null
-                preferences.SavedStoryIds ??= new List<Guid>();
+                prefs.SavedStoryIds.Add(storyId);
 
-                // Add if not already in list
-                if (!preferences.SavedStoryIds.Contains(storyId))
-                {
-                    preferences.SavedStoryIds.Add(storyId);
-                    preferences.UpdatedAt = DateTime.UtcNow;
-                }
-            }
+            prefs.UpdatedAt = DateTime.UtcNow;
+            await _userPreferencesRepository.UpsertUserAsync(prefs);
+        }
+         
 
-            await _userPreferencesRepository.UpsertAsync(preferences);
+        public async Task RemoveFromUserSavedStoriesAsync(Guid userId, Guid storyId)
+        {
+           await _userPreferencesRepository.RemoveFromUserSavedStoriesAsync(userId, storyId);
         }
     }
 }

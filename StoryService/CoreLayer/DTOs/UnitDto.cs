@@ -4,23 +4,13 @@ using System.ComponentModel.DataAnnotations;
 namespace CoreLayer.DTOs
 {
     public record UnitDto(
-        [property: Required]
-        string Id,
-        
-        [property: Required]
-        string SentenceId,
-        
+        [property: Required] string Id,
+        [property: Required] string SentenceId,
         bool IsDiscontinuous,
-        
-        [property: Required]
-        List<SegmentDto> Segments,
-        
-        [property: Required]
-        List<string> Pieces)
+        [property: Required] IReadOnlyList<SegmentDto> Segments,
+        [property: Required] IReadOnlyList<string> Pieces
+    )
     {
-        public UnitDto() : this("", "", false, new List<SegmentDto>(), new List<string>())
-        {
-            // Default constructor
-        }
+        public UnitDto() : this("", "", false, new List<SegmentDto>(), new List<string>()) { }
     }
 }

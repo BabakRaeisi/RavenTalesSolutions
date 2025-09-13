@@ -10,9 +10,9 @@ namespace CoreLayer.MappingProfiles
         {
             CreateMap<StoryRequestDto, Story>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.IsBookmarked, opt => opt.Ignore());
+                .ForMember(dest => dest.Sentences, opt => opt.Ignore())
+                .ForMember(dest => dest.Units, opt => opt.Ignore());
         }
     }
 }

@@ -4,11 +4,16 @@ namespace CoreLayer.ServiceContracts
 {
     public interface IUserPreferencesService
     {
-        Task<UserPreferencesResponseDto?> GetUserPreferencesAsync(Guid userId);
+        Task<UserPreferencesResponseDto?> GetUserByIdAsync(Guid userId);
         Task<UserPreferencesResponseDto> UpdateUserPreferencesAsync(Guid userId, UserPreferencesUpdateRequestDto request);
         Task<UserPreferencesResponseDto> CreateUserPreferencesAsync(Guid userId, UserPreferencesUpdateRequestDto request);
+      
+        Task<IEnumerable<StoryResponseDto>> GetUserSavedStoriesAsync(Guid userId);
+        Task<IEnumerable<StoryResponseDto>> GetUserStoryHistoryAsync(Guid userId);
 
-        Task AddToSeenStoriesAsync(Guid userId, Guid storyId);
-        Task AddToSavedStoriesAsync(Guid userId, Guid storyId);
+        Task AddStoryToUserHistoryAsync(Guid userId, Guid storyId);
+        Task AddToUserSavedStoriesAsync(Guid userId, Guid storyId);
+
+        Task RemoveFromUserSavedStoriesAsync(Guid userId, Guid storyId);
     }
 }

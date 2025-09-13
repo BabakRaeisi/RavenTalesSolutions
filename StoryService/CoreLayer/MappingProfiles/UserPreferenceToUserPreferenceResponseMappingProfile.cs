@@ -4,7 +4,7 @@ using CoreLayer.Entities;
 
 namespace CoreLayer.MappingProfiles
 {
-    public class UserPreferenceToUserPreferenceResponseMappingProfile : Profile
+    public sealed class UserPreferenceToUserPreferenceResponseMappingProfile : Profile
     {
         public UserPreferenceToUserPreferenceResponseMappingProfile()
         {

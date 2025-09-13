@@ -1,6 +1,6 @@
 using CoreLayer.MappingProfiles;
 using CoreLayer.Services;
-using CoreLayer.StoryContracts;
+using CoreLayer.ServiceContracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CoreLayer
@@ -15,7 +15,7 @@ namespace CoreLayer
             
             
             // Register AutoMapper
-            services.AddAutoMapper(typeof(StoryRequestToStoryMappingProfile).Assembly);
+            services.AddAutoMapper(typeof(StoryToStoryResponseMappingProfile).Assembly);
             
             return services;
         }

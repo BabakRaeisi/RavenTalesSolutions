@@ -9,10 +9,7 @@ namespace CoreLayer.Entities
     public class Story
     {
         public Guid Id { get; set; }
-
-        [Required]
-        public Guid UserId { get; set; }
-
+ 
         [Required]
         [StringLength(255)]
         public string Title { get; set; } = string.Empty;
@@ -36,8 +33,6 @@ namespace CoreLayer.Entities
         public List<Sentence> Sentences { get; set; } = new();
         public List<Unit> Units { get; set; } = new();
 
-        // Navigation property
-        [ForeignKey("UserId")]
-        public virtual UserPreferences? UserPreferences { get; set; }
+   
     }
 }

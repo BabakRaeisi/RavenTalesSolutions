@@ -66,7 +66,7 @@ namespace DataLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Stories");
+                    b.ToTable("Stories", (string)null);
                 });
 
             modelBuilder.Entity("CoreLayer.Entities.UserPreferences", b =>
@@ -94,7 +94,7 @@ namespace DataLayer.Migrations
 
                     b.HasKey("UserId");
 
-                    b.ToTable("UserPreferences");
+                    b.ToTable("UserPreferences", (string)null);
                 });
 
             modelBuilder.Entity("CoreLayer.Entities.Story", b =>

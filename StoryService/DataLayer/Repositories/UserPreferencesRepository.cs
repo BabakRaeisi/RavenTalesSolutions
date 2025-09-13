@@ -1,9 +1,11 @@
 using CoreLayer.Entities;
+using CoreLayer.Exceptions;
 using CoreLayer.RepositoryContracts;
 using DataLayer.DbContext;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace DataLayer.Repositories
@@ -17,119 +19,69 @@ namespace DataLayer.Repositories
             _context = context;
         }
 
-        public async Task<UserPreferences?> GetByUserIdAsync(Guid userId)
+        public async Task<UserPreferences?> GetUserByIdAsync(Guid userId)
         {
             return await _context.UserPreferences
                 .FirstOrDefaultAsync(u => u.UserId == userId);
         }
 
-        public async Task<UserPreferences> UpsertAsync(UserPreferences userPreferences)
+        public async Task<UserPreferences> UpsertUserAsync(UserPreferences userPreferences)
         {
-            var existingPreferences = await _context.UserPreferences
+            var existing = await _context.UserPreferences
                 .FirstOrDefaultAsync(u => u.UserId == userPreferences.UserId);
 
-            if (existingPreferences == null)
+            if (existing is null)
             {
-                // Insert new
                 await _context.UserPreferences.AddAsync(userPreferences);
-            }
-            else
-            {
-                // Update existing
-                existingPreferences.LastUsedLanguageLevel = userPreferences.LastUsedLanguageLevel;
-                existingPreferences.LastUsedTargetLanguage = userPreferences.LastUsedTargetLanguage;
-                existingPreferences.PreferredTranslationLanguage = userPreferences.PreferredTranslationLanguage;
-                existingPreferences.SeenStoryIds = userPreferences.SeenStoryIds;
-                existingPreferences.SavedStoryIds = userPreferences.SavedStoryIds;
-                existingPreferences.UpdatedAt = DateTime.UtcNow;
-                
-                _context.UserPreferences.Update(existingPreferences);
+                await _context.SaveChangesAsync();
+                return userPreferences; // newly inserted
             }
 
+            existing.LastUsedLanguageLevel = userPreferences.LastUsedLanguageLevel;
+            existing.LastUsedTargetLanguage = userPreferences.LastUsedTargetLanguage;
+            existing.PreferredTranslationLanguage = userPreferences.PreferredTranslationLanguage;
+            existing.SeenStoryIds = userPreferences.SeenStoryIds;
+            existing.SavedStoryIds = userPreferences.SavedStoryIds;
+            existing.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
-            return userPreferences;
+            return existing; // return the tracked, updated entity
         }
-        
-        public async Task AddToSeenStoriesAsync(Guid userId, Guid storyId)
+
+        public async Task AddStoryToUserHistoryAsync(Guid userId, Guid storyId)
         {
-            var preferences = await GetByUserIdAsync(userId);
-            
-            if (preferences == null)
+            var prefs = await GetUserByIdAsync(userId);
+            if (prefs is null) throw new PreferencesMissingException(userId);
+
+            prefs.SeenStoryIds ??= new List<Guid>();
+            if (!prefs.SeenStoryIds.Contains(storyId))
             {
-                // Create new preferences with default values
-                preferences = new UserPreferences
-                {
-                    UserId = userId,
-                    LastUsedLanguageLevel = CoreLayer.Enums.LanguageLevel.B1,
-                    LastUsedTargetLanguage = CoreLayer.Enums.TargetLanguage.English,
-                    PreferredTranslationLanguage = CoreLayer.Enums.TargetLanguage.English,
-                    SeenStoryIds = new List<Guid> { storyId },
-                    SavedStoryIds = new List<Guid>(),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                
-                await _context.UserPreferences.AddAsync(preferences);
+                prefs.SeenStoryIds.Add(storyId);
+                prefs.UpdatedAt = DateTime.UtcNow;
+                _context.UserPreferences.Update(prefs);
+                await _context.SaveChangesAsync();
             }
-            else
-            {
-                // Ensure collection is initialized
-                preferences.SeenStoryIds ??= new List<Guid>();
-                
-                // Add storyId if not already present
-                if (!preferences.SeenStoryIds.Contains(storyId))
-                {
-                    preferences.SeenStoryIds.Add(storyId);
-                    preferences.UpdatedAt = DateTime.UtcNow;
-                    _context.UserPreferences.Update(preferences);
-                }
-            }
-            
-            await _context.SaveChangesAsync();
         }
-        
-        public async Task AddToSavedStoriesAsync(Guid userId, Guid storyId)
+
+        public async Task AddStoryToUserSavedStoriesAsync(Guid userId, Guid storyId)
         {
-            var preferences = await GetByUserIdAsync(userId);
-            
-            if (preferences == null)
+            var prefs = await GetUserByIdAsync(userId);
+            if (prefs is null) throw new PreferencesMissingException(userId);
+
+            prefs.SavedStoryIds ??= new List<Guid>();
+            if (!prefs.SavedStoryIds.Contains(storyId))
             {
-                // Create new preferences with default values
-                preferences = new UserPreferences
-                {
-                    UserId = userId,
-                    LastUsedLanguageLevel = CoreLayer.Enums.LanguageLevel.B1,
-                    LastUsedTargetLanguage = CoreLayer.Enums.TargetLanguage.English,
-                    PreferredTranslationLanguage = CoreLayer.Enums.TargetLanguage.English,
-                    SeenStoryIds = new List<Guid>(),
-                    SavedStoryIds = new List<Guid> { storyId },
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                
-                await _context.UserPreferences.AddAsync(preferences);
+                prefs.SavedStoryIds.Add(storyId);
+                prefs.UpdatedAt = DateTime.UtcNow;
+                _context.UserPreferences.Update(prefs);
+                await _context.SaveChangesAsync();
             }
-            else
-            {
-                // Ensure collection is initialized
-                preferences.SavedStoryIds ??= new List<Guid>();
-                
-                // Add storyId if not already present
-                if (!preferences.SavedStoryIds.Contains(storyId))
-                {
-                    preferences.SavedStoryIds.Add(storyId);
-                    preferences.UpdatedAt = DateTime.UtcNow;
-                    _context.UserPreferences.Update(preferences);
-                }
-            }
-            
-            await _context.SaveChangesAsync();
         }
- 
-        public async Task RemoveFromSavedStoriesAsync(Guid userId, Guid storyId)
+
+        public async Task RemoveFromUserSavedStoriesAsync(Guid userId, Guid storyId)
         {
-            var preferences = await GetByUserIdAsync(userId);
-            
+            var preferences = await GetUserByIdAsync(userId);
+
             if (preferences?.SavedStoryIds != null && preferences.SavedStoryIds.Contains(storyId))
             {
                 preferences.SavedStoryIds.Remove(storyId);
@@ -138,5 +90,34 @@ namespace DataLayer.Repositories
                 await _context.SaveChangesAsync();
             }
         }
+
+        public async Task<IEnumerable<Story>> GetUserSavedStories(Guid userId)
+        {
+            var prefs = await GetUserByIdAsync(userId);
+            if (prefs?.SavedStoryIds is null || !prefs.SavedStoryIds.Any())
+                return Enumerable.Empty<Story>();
+
+            return await _context.Stories
+                .Where(s => prefs.SavedStoryIds.Contains(s.Id))
+                .Include(s => s.Sentences)
+                .Include(s => s.Units)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Story>> GetUserStoryHistoryAsync(Guid userId)
+        {
+            var prefs = await GetUserByIdAsync(userId);
+            if (prefs?.SeenStoryIds is null || !prefs.SeenStoryIds.Any())
+                return Enumerable.Empty<Story>();
+
+            return await _context.Stories
+                .Where(s => prefs.SeenStoryIds.Contains(s.Id))
+                .Include(s => s.Sentences)
+                .Include(s => s.Units)
+                .AsNoTracking()
+                .ToListAsync();
+        }
     }
 }
+ 

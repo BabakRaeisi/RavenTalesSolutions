@@ -6,6 +6,7 @@ using StoryGenerationMicroservice.API.Services;
 using StoryGenerationMicroservice.API.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization; // Add this for JsonStringEnumConverter
+using StoryGenerationMicroservice.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -73,7 +74,7 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = string.Empty;
     });
 }
-
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
