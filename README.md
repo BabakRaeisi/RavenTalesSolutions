@@ -12,21 +12,21 @@ This repository is structured as a **mono-repo**: each service lives in its own 
 RavenTalesSolutions/
 
 ├── UserAuthService/ # Authentication and user management
-|
+
 ├── ProfileService/ # Stores user learning preferences (languages, CEFR level)
-|
+
 ├── StoryService/ # Generates stories, tracks saved stories and reading history
-|
+
 ├── TranslatorService/ # Provides word/sentence translations
-|
+
 ├── VocabularyService/ # Flashcards & spaced repetition
-|
+
 ├── DictionaryService/ # (Optional) dictionary / lexicon service
-|
+
 ├── FrontendApp/ # React frontend for end users
-|
+
 ├── Shared/ # Shared DTOs, contracts, utilities
-|
+
 └── Infra/ # Docker/K8s/Terraform/CI/CD configs
 
 ## 🚀 Services
