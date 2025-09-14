@@ -1,92 +1,128 @@
-# \# RavenTalesSolutions
+# RavenTalesSolutions
 
-# 
+RavenTalesSolutions is a collection of microservices and a frontend application that together form **RavenTales**, a language learning platform.  
+The goal of the system is to help learners improve their language skills by reading AI-generated stories, instantly translating words, saving vocabulary, and practicing flashcards with spaced repetition.
 
-# RavenTalesSolutions is a collection of microservices and applications that together form the \*\*RavenTales\*\* language learning platform.
+This repository is structured as a **mono-repo**: each service lives in its own folder but shares infrastructure and deployment tooling.
 
-# 
+---
 
-# \## 📂 Repository Structure
-
-
+## 📂 Repository Structure
 
 RavenTalesSolutions/
-
-├── StoryService/ # Generates language learning stories
-
-├── TranslatorService/ # Handles word/sentence translations
-
 ├── UserAuthService/ # Authentication and user management
-
-├── VocabularyService/ # Flashcards \& spaced repetition
-
+├── ProfileService/ # Stores user learning preferences (languages, CEFR level)
+├── StoryService/ # Generates stories, tracks saved stories and reading history
+├── TranslatorService/ # Provides word/sentence translations
+├── VocabularyService/ # Flashcards & spaced repetition
 ├── DictionaryService/ # (Optional) dictionary / lexicon service
-
 ├── FrontendApp/ # React frontend for end users
-
-├── Shared/ # Shared DTOs, contracts, and utilities
-
+├── Shared/ # Shared DTOs, contracts, utilities
 └── Infra/ # Docker/K8s/Terraform/CI/CD configs
 
 \## 🚀 Services
 
+### UserAuthService
 
+Responsible for **identity and authentication**.
 
-\- \*\*StoryService\*\*  
+- Provides user registration, login, and logout.
+- Issues **JWT tokens** that secure communication between services.
+- Other services validate tokens to associate actions with a specific user.
+- Future: support for password resets, role-based access, or integration with OAuth providers.
 
-&nbsp; Generates short stories tailored to user language level and topic using AI.
+---
 
+### ProfileService
 
+Handles **user preferences only**.
 
-\- \*\*TranslatorService\*\*  
+- Stores learning preferences such as:
+  - Preferred target language(s).
+  - CEFR level (A1–C2).
+  - Optional UI/display settings.
+- Lightweight by design: does not manage stories, vocabulary, or history.
+- Used by other services to adapt generated content to each learner.
 
-&nbsp; Provides translation APIs (Google/DeepL/LibreTranslate, configurable).
+---
 
+### StoryService
 
+Owns **all story content and user interactions with stories**.
 
-\- \*\*UserAuthService\*\*  
+- Generates AI-powered stories based on topic, CEFR level, and target language.
+- Persists story data including metadata (creator, createdAt, topic, language level).
+- Manages user interactions:
+  - **Saved Stories** → tracks which users bookmarked which stories.
+  - **Reading History** → logs which users viewed which stories and when.
+- Provides the foundation for analytics and personalized recommendations.
 
-&nbsp; Handles registration, login, and JWT authentication.
+---
 
+### TranslatorService
 
+Dedicated to **translations**.
 
-\- \*\*VocabularyService\*\*  
+- Returns word-by-word and sentence-level translations.
+- Configurable backends: Google Translate, DeepL, LibreTranslate (self-hosted).
+- Standalone service so both frontend and backend services (e.g., VocabularyService) can request translations without depending directly on third-party APIs.
 
-&nbsp; Manages user flashcards and spaced repetition for vocabulary practice.
+---
 
+### VocabularyService
 
+Handles **vocabulary management and practice**.
 
-\- \*\*DictionaryService\*\* \*(planned)\*  
+- Users can save words/phrases (often from StoryService).
+- Stores translations, example sentences, and review metadata.
+- Implements **spaced repetition scheduling (SRS)** to optimize long-term retention.
+- Allows structured review sessions, tracking progress over time.
 
-&nbsp; Provides definitions, synonyms, and lexicon functionality.
+---
 
+### DictionaryService _(optional / future)_
 
+Provides **dictionary/lexicon capabilities**.
 
-\- \*\*FrontendApp\*\*  
+- Complements TranslatorService with richer data: definitions, synonyms, grammatical info.
+- Could integrate with external dictionary APIs or maintain a local lexicon.
+- Useful for advanced learners seeking more depth than basic translations.
 
-&nbsp; Web interface (React) for users to interact with the platform.
+---
 
+### FrontendApp
 
+Learner-facing **web application built with React**.
 
-\## ⚙️ Infrastructure
+- Provides login/registration (via UserAuthService).
+- Allows reading and generating stories (from StoryService).
+- Enables clicking words for instant translations (TranslatorService).
+- Lets learners save words to flashcards (VocabularyService).
+- Displays vocabulary practice sessions and user preferences (ProfileService).
+- Ties all backend services into a single, cohesive experience.
 
+---
 
+## ⚙️ Shared and Infrastructure
 
-\- \*\*Shared/\*\* contains code common to multiple services.  
+### Shared/
 
-\- \*\*Infra/\*\* contains deployment and orchestration files:
+Contains libraries and code used across multiple services:
 
-&nbsp; - `docker-compose.yml`
+- Common DTOs and contracts (only if used across services).
+- Utility helpers (logging, error handling, constants).
 
-&nbsp; - `k8s-manifests/`
+### Infra/
 
-&nbsp; - `terraform/`
+Holds deployment and orchestration configurations:
 
+- **docker-compose.yml** → run all services locally with one command.
+- **k8s-manifests/** → Kubernetes YAML manifests for production deployment.
+- **terraform/** → Infrastructure-as-Code for cloud provisioning.
+- **CI/CD pipelines** → automated builds and deployments.
 
+---
 
-\## 📝 License
+## 📝 License
 
-
-
-This project is licensed under the terms described in \[LICENSE](LICENSE).
-
+This project is licensed under the terms described in [LICENSE](LICENSE) (MIT License).
