@@ -10,26 +10,35 @@ This repository is structured as a **mono-repo**: each service lives in its own 
 ## 📂 Repository Structure
 
 RavenTalesSolutions/
+
 ├── UserAuthService/ # Authentication and user management
+|
 ├── ProfileService/ # Stores user learning preferences (languages, CEFR level)
+|
 ├── StoryService/ # Generates stories, tracks saved stories and reading history
+|
 ├── TranslatorService/ # Provides word/sentence translations
+|
 ├── VocabularyService/ # Flashcards & spaced repetition
+|
 ├── DictionaryService/ # (Optional) dictionary / lexicon service
+|
 ├── FrontendApp/ # React frontend for end users
+|
 ├── Shared/ # Shared DTOs, contracts, utilities
+|
 └── Infra/ # Docker/K8s/Terraform/CI/CD configs
 
-\## 🚀 Services
+## 🚀 Services
 
 ### UserAuthService
 
-Responsible for **identity and authentication**.
+Handles **identity and authentication** across the system.
 
 - Provides user registration, login, and logout.
 - Issues **JWT tokens** that secure communication between services.
 - Other services validate tokens to associate actions with a specific user.
-- Future: support for password resets, role-based access, or integration with OAuth providers.
+- Future extensions: password reset, role-based access, integration with OAuth providers.
 
 ---
 
@@ -125,4 +134,4 @@ Holds deployment and orchestration configurations:
 
 ## 📝 License
 
-This project is licensed under the terms described in [LICENSE](LICENSE) (MIT License).
+**All Rights Reserved** – this code may not be copied, used, or distributed without explicit permission from the author.
