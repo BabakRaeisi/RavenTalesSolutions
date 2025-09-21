@@ -17,7 +17,7 @@ namespace DataLayer
 
             // Register repositories
             services.AddScoped<IStoryRepository, StoryRepository>();
-            services.AddScoped<IUserPreferencesRepository, UserPreferencesRepository>();
+            
 
             return services;
         }

@@ -10,11 +10,12 @@ namespace CoreLayer.ServiceContracts
     public interface IStoryServices
     {
         // Story methods ONLY
-        Task<StoryResponseDto> GenerateStoryAsync(Guid userId, StoryRequestDto request);
-        Task<StoryResponseDto> FetchStoryBasedOnRequestAsync(Guid userId,StoryRequestDto requestDto );
+        Task<StoryCardDto> GenerateStoryAsync(StoryRequestDto request);
+        Task<IEnumerable<StoryCardDto>> FindStoriesByFilterAsync(StoryRequestDto requestDto);
         Task<StoryResponseDto?> GetStoryByIdAsync(Guid storyId);
-        Task<bool> SaveStoryAsync(StoryResponseDto generatedStory);
+        Task<StoryCardDto> FetchStoryBasedOnRequestAsync(Guid userId,StoryRequestDto requestDto );
 
-        
+        Task<IEnumerable<StoryCardDto>> GetRecommendedStoriesAsync(UserProfileDto profile) 
+
     }
 }

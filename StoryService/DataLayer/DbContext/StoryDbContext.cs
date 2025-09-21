@@ -12,134 +12,89 @@ namespace DataLayer.DbContext
         public StoryDbContext(DbContextOptions<StoryDbContext> options) : base(options) { }
 
         public DbSet<Story> Stories { get; set; } = null!;
-        public DbSet<UserPreferences> UserPreferences { get; set; } = null!;
         public DbSet<Sentence> Sentences { get; set; } = null!;
         public DbSet<Unit> Units { get; set; } = null!;
-
+      
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // ---------- Story ----------
-            modelBuilder.Entity<Story>(entity =>
+            // -------- Story (no UserId, no IsBookmarked) --------
+            modelBuilder.Entity<Story>(e =>
             {
-                entity.HasMany(s => s.Sentences)
-                      .WithOne()
-                      .HasForeignKey(s => s.StoryId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                e.HasKey(s => s.Id);
 
-                entity.HasMany(s => s.Units)
-                      .WithOne()
-                      .HasForeignKey(u => u.StoryId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                e.Property(s => s.Title).IsRequired().HasMaxLength(255).IsUnicode(true);
+                e.Property(s => s.Genre).HasMaxLength(100).IsUnicode(true);
 
-                entity.Property(s => s.Title).IsUnicode(true);
-                entity.Property(s => s.Genre).IsUnicode(true);
-                entity.Property(s => s.Content)
-                      .IsUnicode(true)
-                      .HasColumnType("nvarchar(max)");
+                e.Property(s => s.Content)
+                 .IsRequired()
+                 .IsUnicode(true)
+                 .HasColumnType("nvarchar(max)");
 
-                // enums as strings
-                entity.Property(s => s.LanguageLevel).HasConversion<string>().IsRequired();
-                entity.Property(s => s.TargetLanguage).HasConversion<string>().IsRequired();
+                e.Property(s => s.LanguageLevel).HasConversion<string>().HasMaxLength(10).IsRequired();
+                e.Property(s => s.TargetLanguage).HasConversion<string>().HasMaxLength(50).IsRequired();
 
-                // indexes (keep both the legacy singles and our composite)
-                
-                entity.HasIndex(s => s.CreatedAt);
-                entity.HasIndex(s => new { s.LanguageLevel, s.TargetLanguage, s.CreatedAt });
+                e.Property(s => s.CreatedAt).IsRequired();
+
+                e.HasMany(s => s.Sentences)
+                 .WithOne()
+                 .HasForeignKey(s => s.StoryId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasMany(s => s.Units)
+                 .WithOne()
+                 .HasForeignKey(u => u.StoryId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasIndex(s => s.CreatedAt);
+                e.HasIndex(s => new { s.LanguageLevel, s.TargetLanguage, s.CreatedAt });
             });
 
-            // ---------- Sentence ----------
-            modelBuilder.Entity<Sentence>(entity =>
+            // -------- Sentence (composite key) --------
+            modelBuilder.Entity<Sentence>(e =>
             {
-                entity.HasKey(s => new { s.Id, s.StoryId });
-
-                // key parts must be bounded (not nvarchar(max))
-                entity.Property(s => s.Id)
-                      .HasMaxLength(32)
-                      .IsUnicode(false);
-
-                entity.Property(s => s.Text).IsUnicode(true);
+                e.HasKey(s => new { s.Id, s.StoryId });
+                e.Property(s => s.Id).HasMaxLength(64).IsUnicode(false);
+                e.Property(s => s.Text).IsUnicode(true);
             });
 
-            // ---------- Unit ----------
-            modelBuilder.Entity<Unit>(entity =>
+            // -------- Unit (composite key + owned Segments + Pieces list) --------
+            modelBuilder.Entity<Unit>(e =>
             {
-                entity.HasKey(u => new { u.Id, u.StoryId });
+                e.HasKey(u => new { u.Id, u.StoryId });
+                e.Property(u => u.Id).HasMaxLength(64).IsUnicode(false);
+                e.Property(u => u.IsDiscontinuous).IsRequired();
 
-                entity.Property(u => u.Id)
-                      .HasMaxLength(32)
-                      .IsUnicode(false);
-
-                // owned Segments rows linked by (UnitId, StoryId)
-                entity.OwnsMany(u => u.Segments, b =>
+                // Owned Segments stored in separate table
+                e.OwnsMany(u => u.Segments, b =>
                 {
+                    b.ToTable("Unit_Segments");
                     b.WithOwner().HasForeignKey("UnitId", "StoryId");
-                    b.Property<int>("Id");               // surrogate key per owned row
+                    b.Property<int>("Id");
                     b.HasKey("Id", "UnitId", "StoryId");
                     b.Property(p => p.StartChar);
                     b.Property(p => p.EndChar);
                 });
 
-                // Pieces as Unicode nvarchar(max) with simple '|' join
                 const char SEP = '|';
-                entity.Property(u => u.Pieces)
-                      .IsUnicode(true)
-                      .HasColumnType("nvarchar(max)")
-                      .HasConversion(
-                          v => v == null ? "" : string.Join(SEP, v),
-                          s => string.IsNullOrEmpty(s)
-                                ? new List<string>()
-                                : new List<string>(s.Split(new[] { SEP }, StringSplitOptions.None))
-                      )
-                      // ValueComparer to track list changes & silence warnings
-                      .Metadata.SetValueComparer(new ValueComparer<List<string>>(
-                          (a, b) => a != null && b != null && a.SequenceEqual(b),
-                          a => a == null ? 0 : string.Join("|", a).GetHashCode(),
-                          a => a == null ? new List<string>() : new List<string>(a)
-                      ));
+                e.Property(u => u.Pieces)
+                 .IsUnicode(true)
+                 .HasColumnType("nvarchar(max)")
+                 .HasConversion(
+                     v => v == null ? "" : string.Join(SEP, v),
+                     s => string.IsNullOrEmpty(s)
+                            ? new List<string>()
+                            : new List<string>(s.Split(new[] { SEP }, StringSplitOptions.None))
+                 )
+                 .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                     (a, b) => a != null && b != null && a.SequenceEqual(b),
+                     a => a == null ? 0 : string.Join("|", a).GetHashCode(),
+                     a => a == null ? new List<string>() : new List<string>(a)
+                 ));
             });
 
-            // ---------- UserPreferences ----------
-            modelBuilder.Entity<UserPreferences>(entity =>
-            {
-                entity.HasKey(u => u.UserId);
-
-                // enums as strings
-                entity.Property(u => u.LastUsedLanguageLevel).HasConversion<string>().IsRequired();
-                entity.Property(u => u.LastUsedTargetLanguage).HasConversion<string>().IsRequired();
-                entity.Property(u => u.PreferredTranslationLanguage).HasConversion<string>().IsRequired();
-
-                // SeenStoryIds as CSV of GUIDs
-                entity.Property(u => u.SeenStoryIds)
-                      .HasConversion(
-                          v => v == null ? "" : string.Join(',', v),
-                          s => string.IsNullOrWhiteSpace(s)
-                                ? new List<Guid>()
-                                : s.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                   .Select(Guid.Parse).ToList()
-                      )
-                      .Metadata.SetValueComparer(new ValueComparer<List<Guid>>(
-                          (a, b) => a != null && b != null && a.SequenceEqual(b),
-                          a => a == null ? 0 : string.Join(",", a).GetHashCode(),
-                          a => a == null ? new List<Guid>() : new List<Guid>(a)
-                      ));
-
-                // SavedStoryIds as CSV of GUIDs
-                entity.Property(u => u.SavedStoryIds)
-                      .HasConversion(
-                          v => v == null ? "" : string.Join(',', v),
-                          s => string.IsNullOrWhiteSpace(s)
-                                ? new List<Guid>()
-                                : s.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                   .Select(Guid.Parse).ToList()
-                      )
-                      .Metadata.SetValueComparer(new ValueComparer<List<Guid>>(
-                          (a, b) => a != null && b != null && a.SequenceEqual(b),
-                          a => a == null ? 0 : string.Join(",", a).GetHashCode(),
-                          a => a == null ? new List<Guid>() : new List<Guid>(a)
-                      ));
-            });
+          
         }
     }
 }

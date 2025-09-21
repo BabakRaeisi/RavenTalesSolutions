@@ -14,12 +14,12 @@
             {
                 await _next(context);
             }
-            catch (PreferencesMissingException)
+         /*   catch (PreferencesMissingException)
             {
                 await WriteJson(context, 428, "PREFS_MISSING",
                     "User preferences are required before this action.",
                     "/onboarding/preferences");
-            }
+            }*/
             catch (StoryGenerationException)
             {
                 await WriteJson(context, StatusCodes.Status502BadGateway, "STORY_GENERATION_FAILED",

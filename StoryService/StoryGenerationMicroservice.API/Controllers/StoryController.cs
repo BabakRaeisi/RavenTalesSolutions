@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using CoreLayer.ServiceContracts;
 using CoreLayer.DTOs;
 using StoryGenerationMicroservice.API.Extensions;
+using CoreLayer.Exceptions;
 
 namespace StoryGenerationMicroservice.API.Controllers
 {
@@ -23,16 +24,19 @@ namespace StoryGenerationMicroservice.API.Controllers
         [HttpPost("generate")]
         public async Task<ActionResult<StoryResponseDto>> GenerateStory([FromBody] StoryRequestDto request)
         {
+            Guid userId;
+            try { userId = User.GetUserId(); }
+            catch (UnauthorizedAccessException) { return Unauthorized(); }
+
             try
             {
-                var userId = User.GetUserId();
                 var story = await _storyService.GenerateStoryAsync(userId, request);
                 return Ok(story);
             }
-            catch (Exception ex)
+          
+            catch (StoryGenerationException)
             {
-                _logger.LogError(ex, "Failed to generate story");
-                return StatusCode(500, new { message = "Failed to generate story" });
+                return StatusCode(502, new { errorCode = "STORY_GENERATION_FAILED", message = "Story generation failed. Please try again." });
             }
         }
 

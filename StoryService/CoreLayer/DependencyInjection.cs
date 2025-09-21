@@ -11,7 +11,7 @@ namespace CoreLayer
         {
             // Register business services
             services.AddScoped<IStoryServices, StoryService>();
-            services.AddScoped<IUserPreferencesService, UserPreferencesService>();
+          
             
             
             // Register AutoMapper

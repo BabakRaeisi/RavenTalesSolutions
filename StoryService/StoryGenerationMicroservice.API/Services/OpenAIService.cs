@@ -46,11 +46,12 @@ namespace StoryGenerationMicroservice.API.Services
                     new ChatCompletionOptions
                     {
                         MaxOutputTokenCount = maxTokens,
-                        Temperature = temperature
+                        Temperature = temperature,
+                        ResponseFormat = ChatResponseFormat.CreateJsonObjectFormat() // enforce pure JSON
                     });
 
-                _logger.LogInformation("OpenAI response: {Response}", response.Value.Content[0].Text);
                 var json = response.Value.Content[0].Text;
+                _logger.LogInformation("OpenAI raw JSON response: {Json}", json);
 
                 var options = new JsonSerializerOptions
                 {
@@ -58,13 +59,18 @@ namespace StoryGenerationMicroservice.API.Services
                     Converters = { new JsonStringEnumConverter() }
                 };
 
-                _logger.LogInformation("OpenAI raw JSON response: {Json}", json);
-                return JsonSerializer.Deserialize<Story>(json, options)
+                var story = JsonSerializer.Deserialize<Story>(json, options)
                     ?? throw new InvalidOperationException("Failed to parse story JSON.");
+
+                // Ensure enums match the request exactly (model sometimes drifts)
+                story.LanguageLevel = level;
+                story.TargetLanguage = language;
+
+                return story;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate story for {Level} level in {Language}. Topic: {Topic}", 
+                _logger.LogError(ex, "Failed to generate story for {Level} level in {Language}. Topic: {Topic}",
                     level, language, topic ?? "None");
                 throw new InvalidOperationException("Story generation failed", ex);
             }
@@ -75,7 +81,7 @@ namespace StoryGenerationMicroservice.API.Services
             var levelDescription = OpenAIConstants.LevelDescriptions.GetValueOrDefault(level, level.ToString());
             var topicPart = string.IsNullOrEmpty(topic) ? "" : $" about {topic}";
 
-            return $@"Create a story in {{language}}{{topicPart}}.
+            return $@"Create a story in {language}{topicPart}.
 
 Output rules (very important):
 - Return ONLY a single valid JSON object. No prose, no markdown fences.
@@ -102,8 +108,8 @@ Output rules (very important):
   }}
 
 Story requirements:
-- ""LanguageLevel"" must be ""{{level}}"" (case-sensitive).
-- ""TargetLanguage"" must be ""{{language}}"" (case-sensitive).
+- ""LanguageLevel"" must be ""{level}"" (case-sensitive).
+- ""TargetLanguage"" must be ""{language}"" (case-sensitive).
 - ""Title"" is short and engaging.
 - ""Genre"" is a single word (e.g., Adventure, Mystery).
 - ""Content"" is the full story text (about {GetWordCount(level)} words), with normal spacing and punctuation.
@@ -125,12 +131,12 @@ Units (the clickable “little parts”):
 Minimality rules (avoid redundancy):
 - Do NOT create standalone verb-only units or loose collocations.
 - Only include the core, meaningful groupings:
-  • French: 
-    1) the negation particle pair (e.g., ""ne … pas/plus/jamais/rien/personne/que"") as one Unit; and 
+  – French:
+    1) the negation particle pair (e.g., ""ne … pas/plus/jamais/rien/personne/que"") as one Unit; and
     2) the combined subject + negation + finite verb + negative particle as one Unit (e.g., ""Je … ne … VERB … pas""), when present.
-  • Spanish:
-    1) the negated finite verb as one Unit combining ""No"" + the finite verb even if words appear between them (e.g., ""No … puedo""); and 
-    2) any object clitic + infinitive pairing as one Unit (e.g., ""lo … explicar""). 
+  – Spanish:
+    1) the negated finite verb as one Unit combining ""No"" + the finite verb even if words appear between them (e.g., ""No … puedo""); and
+    2) any object clitic + infinitive pairing as one Unit (e.g., ""lo … explicar"").
 - Do NOT reorder or alter words. ""Pieces"" must be exact surface text as it appears in ""Content"".
 - Do NOT emit extra units that are subsets of other units (e.g., the finite verb alone if a negated unit already covers it).
 
