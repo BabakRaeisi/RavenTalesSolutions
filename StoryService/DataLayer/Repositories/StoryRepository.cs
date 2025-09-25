@@ -1,5 +1,5 @@
 using CoreLayer.Entities;
-using CoreLayer.Enums;
+using RavenTales.Shared;
 using CoreLayer.RepositoryContracts;
 using DataLayer.DbContext;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +26,7 @@ namespace DataLayer.Repositories
             return story;
         }
 
-        public async Task<Story?> GetStoryById(Guid id)
+        public async Task<Story?> GetStoryById(Guid id, CancellationToken ct = default)
         {
             return await _context.Stories
                 .Include(s => s.Sentences)
@@ -36,13 +36,13 @@ namespace DataLayer.Repositories
         }
 
         public async Task<IEnumerable<Story>> FindStoriesByFilterAsync(
-            LanguageLevel languageLevel, TargetLanguage targetLanguage, string? topic = null)
+            LanguageLevel languageLevel,  Language targetLanguage, string? topic = null, CancellationToken ct = default)
         {
             var query = _context.Stories
                 .Include(s => s.Sentences)
                 .Include(s => s.Units)
                 .AsNoTracking()
-                .Where(s => s.LanguageLevel == languageLevel && s.TargetLanguage == targetLanguage);
+                .Where(s => s.LanguageLevel == languageLevel && s.StoryLanguage == targetLanguage);
 
             if (!string.IsNullOrEmpty(topic))
                 query = query.Where(s => s.Title.Contains(topic) || s.Content.Contains(topic) || s.Genre.Contains(topic));
@@ -51,9 +51,22 @@ namespace DataLayer.Repositories
                 .OrderByDescending(s => s.CreatedAt)   // prefer freshest first
                 .ToListAsync();
         }
+        
+        public async Task<IEnumerable<Story>> QueryMatchingStoriesAsync(Language language, LanguageLevel level, string? topic, CancellationToken ct = default)
+        {
+            var q = _context.Stories
+      .Include(s => s.Sentences)
+      .Include(s => s.Units)
+      .AsNoTracking()
+      .Where(s => s.StoryLanguage == language && s.LanguageLevel == level);
 
+            if (!string.IsNullOrWhiteSpace(topic))
+                q = q.Where(s => EF.Functions.Like(s.Title, $"%{topic}%")
+                              || EF.Functions.Like(s.Content, $"%{topic}%")
+                              || EF.Functions.Like(s.Genre, $"%{topic}%"));
 
+            return await q.OrderByDescending(s => s.CreatedAt).ToListAsync(ct);
 
-
+        }
     }
 }

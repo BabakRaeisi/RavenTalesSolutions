@@ -1,10 +1,11 @@
-using CoreLayer.Enums;
+
 using CoreLayer.ExternalServiceContracts;
 using CoreLayer.Constants;
 using CoreLayer.Entities;
 using OpenAI.Chat;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using RavenTales.Shared;
 
 namespace StoryGenerationMicroservice.API.Services
 {
@@ -29,7 +30,7 @@ namespace StoryGenerationMicroservice.API.Services
             _chatClient = new ChatClient(model, apiKey);
         }
 
-        public async Task<Story> GenerateStoryAsync(LanguageLevel level, TargetLanguage language, string? topic = null)
+        public async Task<Story> GenerateStoryAsync(LanguageLevel level,  Language language, string? topic = null)
         {
             try
             {
@@ -64,7 +65,7 @@ namespace StoryGenerationMicroservice.API.Services
 
                 // Ensure enums match the request exactly (model sometimes drifts)
                 story.LanguageLevel = level;
-                story.TargetLanguage = language;
+                story.StoryLanguage = language;
 
                 return story;
             }
@@ -76,7 +77,7 @@ namespace StoryGenerationMicroservice.API.Services
             }
         }
 
-        private string BuildPrompt(LanguageLevel level, TargetLanguage language, string? topic)
+        private string BuildPrompt(LanguageLevel level, Language language, string? topic)
         {
             var levelDescription = OpenAIConstants.LevelDescriptions.GetValueOrDefault(level, level.ToString());
             var topicPart = string.IsNullOrEmpty(topic) ? "" : $" about {topic}";
@@ -92,7 +93,7 @@ Output rules (very important):
     ""Content"": string,
     ""Genre"": string,
     ""LanguageLevel"": string,   // one of: A1, A2, B1, B2, C1, C2 (case-sensitive, no extra text)
-    ""TargetLanguage"": string,  // e.g., English, Spanish, French, German, Italian, etc. (case-sensitive, no extra text).
+    ""StoryLanguage"": string,  // e.g., English, Spanish, French, German, Italian, etc. (case-sensitive, no extra text).
     ""Sentences"": [
       {{ ""Id"": string, ""StartChar"": number, ""EndChar"": number, ""Text"": string }}
     ],
@@ -109,7 +110,7 @@ Output rules (very important):
 
 Story requirements:
 - ""LanguageLevel"" must be ""{level}"" (case-sensitive).
-- ""TargetLanguage"" must be ""{language}"" (case-sensitive).
+- ""StoryLanguage"" must be ""{language}"" (case-sensitive).
 - ""Title"" is short and engaging.
 - ""Genre"" is a single word (e.g., Adventure, Mystery).
 - ""Content"" is the full story text (about {GetWordCount(level)} words), with normal spacing and punctuation.
@@ -119,7 +120,7 @@ Sentence segmentation:
 - ""StartChar"" is 0-based, inclusive; ""EndChar"" is 0-based, exclusive; both index into the full ""Content"".
 - ""Text"" must exactly equal Content[StartChar:EndChar].
 
-Units (the clickable “little parts”):
+Units (the clickable ï¿½little partsï¿½):
 - Each Unit represents words that function together as one idea; Units may be continuous or discontinuous in the sentence.
 - For every Unit:
   - ""SentenceId"" points to the sentence it lives in.
@@ -131,12 +132,12 @@ Units (the clickable “little parts”):
 Minimality rules (avoid redundancy):
 - Do NOT create standalone verb-only units or loose collocations.
 - Only include the core, meaningful groupings:
-  – French:
-    1) the negation particle pair (e.g., ""ne … pas/plus/jamais/rien/personne/que"") as one Unit; and
-    2) the combined subject + negation + finite verb + negative particle as one Unit (e.g., ""Je … ne … VERB … pas""), when present.
-  – Spanish:
-    1) the negated finite verb as one Unit combining ""No"" + the finite verb even if words appear between them (e.g., ""No … puedo""); and
-    2) any object clitic + infinitive pairing as one Unit (e.g., ""lo … explicar"").
+  ï¿½ French:
+    1) the negation particle pair (e.g., ""ne ï¿½ pas/plus/jamais/rien/personne/que"") as one Unit; and
+    2) the combined subject + negation + finite verb + negative particle as one Unit (e.g., ""Je ï¿½ ne ï¿½ VERB ï¿½ pas""), when present.
+  ï¿½ Spanish:
+    1) the negated finite verb as one Unit combining ""No"" + the finite verb even if words appear between them (e.g., ""No ï¿½ puedo""); and
+    2) any object clitic + infinitive pairing as one Unit (e.g., ""lo ï¿½ explicar"").
 - Do NOT reorder or alter words. ""Pieces"" must be exact surface text as it appears in ""Content"".
 - Do NOT emit extra units that are subsets of other units (e.g., the finite verb alone if a negated unit already covers it).
 

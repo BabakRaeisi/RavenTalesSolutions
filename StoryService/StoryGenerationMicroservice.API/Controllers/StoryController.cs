@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using CoreLayer.ServiceContracts;
 using CoreLayer.DTOs;
+using RavenTales.Shared;
 using StoryGenerationMicroservice.API.Extensions;
 using CoreLayer.Exceptions;
 
@@ -12,10 +13,10 @@ namespace StoryGenerationMicroservice.API.Controllers
     [Route("api/[controller]")]
     public class StoryController : ControllerBase
     {
-        private readonly IStoryServices _storyService;
+        private readonly IStoryService _storyService;
         private readonly ILogger<StoryController> _logger;
 
-        public StoryController(IStoryServices storyService, ILogger<StoryController> logger)
+        public StoryController(IStoryService storyService, ILogger<StoryController> logger)
         {
             _storyService = storyService;
             _logger = logger;

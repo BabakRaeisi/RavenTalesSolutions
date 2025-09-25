@@ -13,7 +13,7 @@ RavenTalesSolutions/
 
 ├── UserAuthService/ # Authentication and user management
 
-├── ProfileService/ # Stores user learning preferences (languages, CEFR level)
+├── ProfileService/ # Stores user learning preferences and gives user's information to other services (languages, CEFR level)
 
 ├── StoryService/ # Generates stories, tracks saved stories and reading history
 

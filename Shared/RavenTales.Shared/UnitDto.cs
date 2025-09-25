@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace CoreLayer.DTOs
+namespace RavenTales.Shared
 {
     public record UnitDto(
         [property: Required] string Id,

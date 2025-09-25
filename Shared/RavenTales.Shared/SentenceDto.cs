@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace CoreLayer.DTOs
+namespace RavenTales.Shared
 {
     public record SentenceDto(
         [property: Required] string Id,

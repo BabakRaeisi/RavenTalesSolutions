@@ -1,9 +1,9 @@
-﻿using CoreLayer.Enums;
+﻿
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace CoreLayer.DTOs
+namespace RavenTales.Shared
 {
     // mirrors your domain Story + the agreed Sentences/Units
     public sealed record StoryResponseDto(
@@ -12,7 +12,7 @@ namespace CoreLayer.DTOs
         [property: Required] string Content,
         [property: Required] string Genre,
         [property: Required] LanguageLevel LanguageLevel,
-        [property: Required] TargetLanguage TargetLanguage,
+        [property: Required] Language TargetLanguage,
         DateTime CreatedAt,
         [property: Required] IReadOnlyList<SentenceDto> Sentences,
         [property: Required] IReadOnlyList<UnitDto> Units

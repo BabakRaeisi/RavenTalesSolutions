@@ -1,8 +1,7 @@
-﻿using CoreLayer.Enums;
-using System;
-using System.Collections.Generic;
+﻿using RavenTales.Shared;
+ 
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+ 
 
 namespace CoreLayer.Entities
 {
@@ -21,7 +20,7 @@ namespace CoreLayer.Entities
         public LanguageLevel LanguageLevel { get; set; }
 
         [Required]
-        public TargetLanguage TargetLanguage { get; set; }
+        public  Language StoryLanguage { get; set; }
 
         [StringLength(100)]
         public string Genre { get; set; } = string.Empty; // Added genre property

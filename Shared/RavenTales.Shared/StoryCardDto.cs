@@ -1,6 +1,6 @@
-﻿using CoreLayer.Enums;
+﻿
 using System.ComponentModel.DataAnnotations;
-namespace CoreLayer.DTOs
+namespace RavenTales.Shared
 {
     // A lightweight representation of a story for listing purposes
     // Used in story listings, e.g., user's saved stories
@@ -12,12 +12,12 @@ namespace CoreLayer.DTOs
     [MaxLength(200)] string? Title,
 
     [property: Required] LanguageLevel LanguageLevel,
-    [property: Required] TargetLanguage TargetLanguage,
+    [property: Required] Language TargetLanguage,
 
     [MaxLength(100)] string? Topic,
 
     [Required, MaxLength(200)]
-    string Excerpt
+    string TextPreview
 )
     { public StoryCardDto() : this(default,"",default,default,"","") { } }
 }

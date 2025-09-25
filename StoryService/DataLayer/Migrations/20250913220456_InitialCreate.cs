@@ -123,7 +123,7 @@ namespace DataLayer.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Stories_LanguageLevel_TargetLanguage_CreatedAt",
                 table: "Stories",
-                columns: new[] { "LanguageLevel", "TargetLanguage", "CreatedAt" });
+                columns: new[] { "LanguageLevel", "StoryLanguage", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Unit_Segments_UnitId_StoryId",

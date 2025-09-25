@@ -1,4 +1,4 @@
-﻿using CoreLayer.Enums;
+﻿using RavenTales.Shared;
 using System.ComponentModel.DataAnnotations;
 
 namespace CoreLayer.DTOs
@@ -10,8 +10,8 @@ namespace CoreLayer.DTOs
         LanguageLevel LanguageLevel,
 
         [property: Required]
-        [property: EnumDataType(typeof(TargetLanguage))]
-        TargetLanguage TargetLanguage,
+        [property: EnumDataType(typeof( Language))]
+         Language TargetLanguage,
 
         [property: StringLength(255)]
         string? Topic

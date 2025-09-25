@@ -78,7 +78,7 @@ namespace DataLayer.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
-                    b.Property<string>("TargetLanguage")
+                    b.Property<string>("StoryLanguage")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -93,7 +93,7 @@ namespace DataLayer.Migrations
 
                     b.HasIndex("CreatedAt");
 
-                    b.HasIndex("LanguageLevel", "TargetLanguage", "CreatedAt");
+                    b.HasIndex("LanguageLevel", "StoryLanguage", "CreatedAt");
 
                     b.ToTable("Stories");
                 });

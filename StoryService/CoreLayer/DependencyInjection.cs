@@ -10,13 +10,12 @@ namespace CoreLayer
         public static IServiceCollection AddCoreServices(this IServiceCollection services)
         {
             // Register business services
-            services.AddScoped<IStoryServices, StoryService>();
-          
+            services.AddScoped<IStoryService, StoryService>();
             
-            
+
             // Register AutoMapper
             services.AddAutoMapper(typeof(StoryToStoryResponseMappingProfile).Assembly);
-            
+            services.AddSingleton<IUserSkipStore, InMemoryUserSkipStore>();
             return services;
         }
     }

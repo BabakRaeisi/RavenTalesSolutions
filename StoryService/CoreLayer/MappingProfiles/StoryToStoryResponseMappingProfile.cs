@@ -1,5 +1,5 @@
 using AutoMapper;
-using CoreLayer.DTOs;
+using RavenTales.Shared;
 using CoreLayer.Entities;
 
 namespace CoreLayer.MappingProfiles

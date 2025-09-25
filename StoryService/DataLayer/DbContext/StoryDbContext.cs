@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CoreLayer.Entities;
-using Microsoft.EntityFrameworkCore;
+
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace DataLayer.DbContext
 {
-    public class StoryDbContext : Microsoft.EntityFrameworkCore.DbContext
+    using Microsoft.EntityFrameworkCore;
+    public class StoryDbContext : DbContext
     {
         public StoryDbContext(DbContextOptions<StoryDbContext> options) : base(options) { }
 
@@ -33,7 +34,7 @@ namespace DataLayer.DbContext
                  .HasColumnType("nvarchar(max)");
 
                 e.Property(s => s.LanguageLevel).HasConversion<string>().HasMaxLength(10).IsRequired();
-                e.Property(s => s.TargetLanguage).HasConversion<string>().HasMaxLength(50).IsRequired();
+                e.Property(s => s.StoryLanguage).HasConversion<string>().HasMaxLength(50).IsRequired();
 
                 e.Property(s => s.CreatedAt).IsRequired();
 
@@ -48,7 +49,7 @@ namespace DataLayer.DbContext
                  .OnDelete(DeleteBehavior.Cascade);
 
                 e.HasIndex(s => s.CreatedAt);
-                e.HasIndex(s => new { s.LanguageLevel, s.TargetLanguage, s.CreatedAt });
+                e.HasIndex(s => new { s.LanguageLevel, s.StoryLanguage, s.CreatedAt });
             });
 
             // -------- Sentence (composite key) --------

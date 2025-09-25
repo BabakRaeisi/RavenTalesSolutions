@@ -1,12 +1,14 @@
 using CoreLayer;
+using CoreLayer.ExternalServiceContracts;
+using CoreLayer.ServiceContracts;
 using DataLayer;
 using DataLayer.DbContext;
-using CoreLayer.ExternalServiceContracts;
-using StoryGenerationMicroservice.API.Services;
-using StoryGenerationMicroservice.API.Extensions;
+ 
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization; // Add this for JsonStringEnumConverter
+using StoryGenerationMicroservice.API.Extensions;
 using StoryGenerationMicroservice.API.Middleware;
+using StoryGenerationMicroservice.API.Services;
+using System.Text.Json.Serialization; // Add this for JsonStringEnumConverter
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +56,9 @@ builder.Services.AddSwaggerGen(options =>
 // Register services from your existing DI extensions
 builder.Services.AddDataServices(builder.Configuration);
 builder.Services.AddCoreServices();
+
+//dummy profile client for testing purposes
+builder.Services.AddScoped<IProfileClient, DummyProfileClient>();
 
 // Register API-specific services
 builder.Services.AddScoped<IOpenAIService, OpenAIService>();

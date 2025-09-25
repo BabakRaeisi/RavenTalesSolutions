@@ -28,6 +28,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CoreLayer\CoreLayer.csproj" />
     <ProjectReference Include="..\DataLayer\DataLayer.csproj" />
+    <ProjectReference Include="..\..\Shared\RavenTales.Shared\RavenTales.Shared.csproj" />
   </ItemGroup>
 
 </Project>

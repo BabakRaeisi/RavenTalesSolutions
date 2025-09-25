@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace CoreLayer.DTOs
+namespace RavenTales.Shared
 {
     public record SegmentDto(
         [property: Range(0, int.MaxValue)] int StartChar,

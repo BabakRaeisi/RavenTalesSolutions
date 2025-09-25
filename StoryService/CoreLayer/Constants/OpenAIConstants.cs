@@ -1,4 +1,4 @@
-using CoreLayer.Enums;
+using RavenTales.Shared;
 
 namespace CoreLayer.Constants
 {
