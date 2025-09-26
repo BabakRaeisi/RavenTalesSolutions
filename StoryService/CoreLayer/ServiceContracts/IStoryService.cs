@@ -13,7 +13,7 @@ namespace CoreLayer.ServiceContracts
 
 
         Task<StoryCardDto?> GenerateStoryAsync(Guid userId, StoryRequestDto request, CancellationToken ct = default);
-        Task<IEnumerable<StoryCardDto?>> FindStoriesByFilterAsync(Guid userId, StoryRequestDto request, CancellationToken ct = default);
+        Task<IEnumerable<StoryCardDto?>> FindStoriesByFilterAsync(Guid userId, LanguageLevel level, Language language, string? topic, CancellationToken ct = default);
 
         // If you log viewing history or personalize, include userId; otherwise you can drop it.
         Task<StoryResponseDto?> GetStoryByIdAsync(Guid userId, Guid storyId, CancellationToken ct = default);

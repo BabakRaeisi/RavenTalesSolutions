@@ -53,14 +53,27 @@ namespace CoreLayer.Services
             return _mapper.Map<StoryCardDto>(generated);
         }
 
-        public Task<IEnumerable<StoryCardDto?>> FindStoriesByFilterAsync(Guid userId, StoryRequestDto request, CancellationToken ct = default)
+        public async Task<IEnumerable<StoryCardDto?>> FindStoriesByFilterAsync(Guid userId, LanguageLevel level ,Language language ,string? topic=null , CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            IEnumerable<Story?> stories =  await _storyRepository.FindStoriesByFilterAsync(level, language,topic ,ct);
+            //if stories are more than 0 return them as of StoryCardDto else return empty list
+            if (stories.Any())
+                return _mapper.Map<List<StoryCardDto?>>(stories);
+            else 
+            {
+              
+                throw new Exception("no stories were found.consider changing your filter");
+
+            }
+
         }
 
-        public Task<StoryResponseDto?> GetStoryByIdAsync(Guid userId, Guid storyId, CancellationToken ct = default)
+        public async Task<StoryResponseDto?> GetStoryByIdAsync(Guid userId, Guid storyId, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            var story = await _storyRepository.GetStoryById(storyId, ct);
+            if (story is null) return null;
+            else
+            return _mapper.Map<StoryResponseDto>(story);
         }
 
         public async Task<StoryCardDto?> FetchStoryBasedOnRequestAsync(Guid userId, StoryRequestDto request, CancellationToken ct = default)
